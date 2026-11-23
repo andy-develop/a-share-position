@@ -83,15 +83,27 @@ def load_history():
     return rows
 
 
+HEADER = ["date", "temp", "band", "breadth_pct", "zt", "dt",
+          "idx_avg", "up", "down", "flat"]
+
+
 def save_history(row, path):
-    exists = os.path.exists(path)
+    """按日期覆盖写入：同一交易日重复运行只保留最后一次（盘中 → 收盘）。"""
+    rows = []
+    if os.path.exists(path):
+        try:
+            with open(path, encoding="utf-8-sig") as f:
+                rows = [r for r in csv.reader(f)
+                        if r and r[0] != HEADER[0] and r[0] != row[0]]
+        except OSError:
+            rows = []
+    rows.append(row)
+    rows.sort(key=lambda r: r[0])
     try:
-        with open(path, "a", newline="", encoding="utf-8") as f:
+        with open(path, "w", newline="", encoding="utf-8") as f:
             w = csv.writer(f)
-            if not exists:
-                w.writerow(["date", "temp", "band", "breadth_pct", "zt", "dt",
-                            "idx_avg", "up", "down", "flat"])
-            w.writerow(row)
+            w.writerow(HEADER)
+            w.writerows(rows)
         return True
     except OSError:
         return False
