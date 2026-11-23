@@ -96,7 +96,7 @@ description: A股仓位管理。当用户询问"现在A股建议多少仓位""�
 ## 失败处理
 
 - 脚本报 `DataError`：网络取数失败，提示"行情源暂时不可用，请稍后重试"，不要用估算值替代。
-- 渲染失败（缺 Pillow）：以 `--text` 输出纯文本版，并说明"图片渲染环境缺少 Pillow，可 `pip install pillow` 后重跑"。
+- 渲染失败（Pillow 缺失且自动安装失败）：以 `--text` 输出纯文本版，并说明"图片渲染环境缺少 Pillow，可 `pip3 install pillow` 后重跑"。
 - 非交易日或开盘前：卡片日期为最近一个交易日，标注"收盘"。
 - 盘中运行：温度为盘中快照，页头标"盘中"，收盘后应重跑一次。
 
@@ -109,11 +109,10 @@ description: A股仓位管理。当用户询问"现在A股建议多少仓位""�
 ## 安装
 
 ```bash
-# 本地目录（在 a-share-position 的上一层执行）
-npx skills add ./a-share-position
-
-# 从 Git 仓库，指定 agent / 全局安装
-npx skills add <owner>/<repo> --skill a-share-position -a claude-code -a codex -g
+# 一行装好，无需再单独安装依赖
+npx skills add andy-develop/a-share-position -g -y
 ```
 
-依赖：Python 3.8+，渲染图片需要 Pillow（`pip install pillow`）。取数与计算只用标准库。
+只依赖 Python 3.8+，取数与计算全部使用标准库。绘图用的 Pillow **首次运行脚本时自动安装**，
+不需要单独执行 `pip install`；若环境禁止联网或自动安装失败，脚本会自动降级为文本版输出，
+此时再手动执行 `pip3 install pillow` 即可。设置 `POSITION_NO_AUTO_INSTALL=1` 可关闭自动安装。

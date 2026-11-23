@@ -414,6 +414,9 @@ def main():
         want_image = True
 
     image_ok = False
+    if want_image and render_mod is not None:
+        if not render_mod.available():          # 首次运行：自动补装 Pillow
+            render_mod.ensure_pillow(quiet=False)
     if want_image and render_mod is not None and render_mod.available():
         path = args.png or default_png_path(result["date"])
         try:
@@ -423,6 +426,10 @@ def main():
             image_ok = True
         except Exception as exc:  # noqa: BLE001
             print(f"图片渲染失败：{type(exc).__name__}: {exc}", file=sys.stderr)
+
+    if want_image and not image_ok and render_mod is not None and not render_mod.available():
+        print("绘图依赖 Pillow 不可用且自动安装失败，已改为输出文本版。\n"
+              "手动安装：pip3 install pillow（或 pip3 install --user pillow）", file=sys.stderr)
 
     if args.text or not image_ok:
         print(result["card"])

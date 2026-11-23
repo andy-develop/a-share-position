@@ -4,35 +4,40 @@ A 股仓位管理 skill：一句话问「现在 A 股建议多少仓位」，直
 
 - 适用：宽基指数层面的整体仓位择时（满仓 / 空仓两档）
 - 输出：PNG 决策卡，含市场温度、行情快照、建议仓位、信号台账、市场点评
-- 依赖：Python 3.8+；取数与计算只用标准库，绘制图片需要 Pillow（`pip install pillow`）
+- 依赖：只需 Python 3.8+；取数与计算用标准库，绘图的 Pillow **首次运行时自动安装**
 
 ![决策卡示例](assets/sample-card.png)
 
 ## 安装
 
-一行装到本机所有 agent（推荐）：
+一行装好，没有后续步骤：
 
 ```bash
-npx skills add andy-develop/a-share-position --all -y
+npx skills add andy-develop/a-share-position -g -y
 ```
 
-只装到某个 agent、或全局生效：
+`-g` 为全局安装（所有项目生效），去掉则装到当前项目。也可指定 agent：
 
 ```bash
-npx skills add andy-develop/a-share-position -a claude-code -y    # 仅 Claude Code
-npx skills add andy-develop/a-share-position -a codex -a cursor -y # 多个 agent
-npx skills add andy-develop/a-share-position -g -y                # 全局（所有项目生效）
+npx skills add andy-develop/a-share-position -a claude-code -y     # 仅 Claude Code
+npx skills add andy-develop/a-share-position --all -y              # 本机所有 agent
 ```
 
 `skills` CLI 会自动识别本机已安装的 agent，把 skill 放到各自约定的目录
 （`.claude/skills/`、`.agents/skills/`、`~/.workbuddy/skills/` 等），
 因此同一份 skill 可跨 agent 通用。
 
-装完补一下绘图依赖：
+### 关于 Pillow
 
-```bash
-pip3 install pillow
-```
+`npx skills add` 只负责把文件放到对应目录，**不支持安装钩子**，所以 Python 依赖不能在这一步装。
+本 skill 的做法是把安装推迟到首次运行：脚本启动时检测 Pillow，缺失就自动执行 pip 安装。
+
+| 情况 | 行为 |
+| --- | --- |
+| 已装 Pillow | 直接出图 |
+| 未装、可联网 | 首次运行自动安装后出图（约 40 秒，之后为秒级） |
+| 未装、无网络 | 自动降级为文本版，并提示手动 `pip3 install pillow` |
+| 想禁止自动安装 | `POSITION_NO_AUTO_INSTALL=1 python3 scripts/decide.py` |
 
 ### 手动安装（不使用 CLI）
 
@@ -40,7 +45,6 @@ pip3 install pillow
 git clone https://github.com/andy-develop/a-share-position.git
 cp -R a-share-position ~/.claude/skills/a-share-position      # Claude Code
 cp -R a-share-position ~/.workbuddy/skills/a-share-position    # WorkBuddy
-pip3 install pillow
 ```
 
 ## 使用

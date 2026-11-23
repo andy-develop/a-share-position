@@ -15,7 +15,50 @@ import os
 try:
     from PIL import Image, ImageDraw, ImageFont
 except ImportError:  # pragma: no cover
-    Image = None
+    Image = ImageDraw = ImageFont = None
+
+
+def available():
+    return Image is not None
+
+
+def ensure_pillow(quiet=True):
+    """确保 Pillow 可用：缺失时自动安装，装不上返回 False。
+
+    安装顺序：当前解释器 pip → --user → --break-system-packages（PEP 668 环境）。
+    设置环境变量 POSITION_NO_AUTO_INSTALL=1 可禁用自动安装。
+    """
+    global Image, ImageDraw, ImageFont
+    if Image is not None:
+        return True
+    if os.environ.get("POSITION_NO_AUTO_INSTALL"):
+        return False
+
+    import subprocess
+    import sys
+
+    if not quiet:
+        print("首次运行：正在安装绘图依赖 Pillow…", file=sys.stderr)
+
+    base = [sys.executable, "-m", "pip", "install", "--quiet", "--disable-pip-version-check"]
+    attempts = [base + ["pillow"],
+                base + ["--user", "pillow"],
+                base + ["--break-system-packages", "pillow"],
+                base + ["--user", "--break-system-packages", "pillow"]]
+
+    for cmd in attempts:
+        try:
+            subprocess.run(cmd, timeout=180,
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        except (OSError, subprocess.SubprocessError):
+            continue
+        try:
+            from PIL import Image as _img, ImageDraw as _draw, ImageFont as _font
+        except ImportError:
+            continue
+        Image, ImageDraw, ImageFont = _img, _draw, _font
+        return True
+    return False
 
 # ------------------------------------------------------------------ 设计变量
 
@@ -479,7 +522,3 @@ def render(data, out_path, scale=2):
         os.makedirs(ensure, exist_ok=True)
     out.save(out_path, format="PNG", optimize=True)
     return out_path, out.width, out.height
-
-
-def available():
-    return Image is not None
